@@ -1,0 +1,15 @@
+{
+  "description": "Surfaces decision-register bets that are past their review date at session start. Read-only, silent when there is nothing overdue or the repo is not wired, and always exits 0.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

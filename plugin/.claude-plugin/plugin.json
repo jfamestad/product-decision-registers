@@ -1,0 +1,18 @@
+{
+  "name": "triad-dr",
+  "version": "0.8.0",
+  "description": "Drives use of the decision registers \u2014 ADR (Builder), IDR (Investor), MDR (Seller) \u2014 plus an escalation queue where automated workers park decisions they are not authorized to make. Five commands for the rituals that keep a register worth reading: write a killable bet, judge one at its review date, record a decision under the bet that funds it, answer what agents are blocked on, and see what is overdue or ungoverned. Surfaces blocked workers and past-due bets at session start. Reads and prompts; never writes a decision record on its own.",
+  "author": {
+    "name": "Josh Famestad"
+  },
+  "license": "MIT",
+  "keywords": [
+    "decision-records",
+    "adr",
+    "governance",
+    "investment",
+    "product",
+    "solo-builder",
+    "agentic"
+  ]
+}

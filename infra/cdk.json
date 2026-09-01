@@ -1,0 +1,4 @@
+{
+  "app": "uv run --project .. python app.py",
+  "context": {}
+}

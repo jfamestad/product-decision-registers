@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "triad-dr",
+  "description": "Decision registers for solo agentic product development \u2014 ADR (Builder), IDR (Investor), MDR (Seller).",
+  "owner": {
+    "name": "Josh Famestad",
+    "email": "jfamestad@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "triad-dr",
+      "source": "./",
+      "version": "0.8.0",
+      "description": "Decision registers plus an escalation queue: write a killable bet, judge it at its review date, record decisions under the bet that funds them, and answer what automated workers are blocked on.",
+      "category": "productivity"
+    }
+  ]
+}

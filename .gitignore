@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# CDK
+cdk.out/
+.cdk.staging/
+
+# Environment
+.env
+
+# Machine-specific MCP wiring. `.mcp.json` hardcodes an absolute path to this
+# checkout and an AWS profile name, neither of which travels between machines
+# or clones. Copy `.mcp.json.example` and fill in your own.
+.mcp.json
+
+# Claude Code local state. settings.local.json holds machine-local permission
+# grants and paths. Listed here rather than relying on a global gitignore,
+# because a global one does not travel with the repo.
+.claude/settings.local.json
+
+# macOS / editors
+.DS_Store
+.idea/

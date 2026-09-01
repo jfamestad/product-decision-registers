@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "triad-dr": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/path/to/triad-dr",
+        "triad-dr-mcp"
+      ],
+      "env": {
+        "DR_PROJECT": "example-project",
+        "AWS_PROFILE": "<your-aws-profile>"
+      }
+    }
+  }
+}
