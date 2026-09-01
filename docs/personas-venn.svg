@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 640" width="800" height="640" role="img" aria-labelledby="title desc">
+  <title id="title">The three personas of triad-dr</title>
+  <desc id="desc">A Venn diagram of three overlapping circles: Builder, Seller, and Investor. Builder and Seller overlap on feature priorities. Seller and Investor overlap on demand signals. Investor and Builder overlap on costs. All three overlap on the product.</desc>
+
+  <rect x="0" y="0" width="800" height="640" rx="16" fill="#ffffff" stroke="#d0d7de" stroke-width="1"/>
+
+  <!-- circles -->
+  <circle cx="315" cy="270" r="160" fill="#3b82f6" fill-opacity="0.30" stroke="#1d4ed8" stroke-width="2"/>
+  <circle cx="485" cy="270" r="160" fill="#f59e0b" fill-opacity="0.30" stroke="#b45309" stroke-width="2"/>
+  <circle cx="400" cy="418" r="160" fill="#10b981" fill-opacity="0.30" stroke="#047857" stroke-width="2"/>
+
+  <!-- persona names -->
+  <g font-family="Helvetica, Arial, sans-serif" font-size="26" font-weight="700" text-anchor="middle" fill="#111827">
+    <text x="243" y="200">Builder</text>
+    <text x="557" y="200">Seller</text>
+    <text x="400" y="512">Investor</text>
+  </g>
+
+  <!-- pairwise intersections -->
+  <g font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="600" text-anchor="middle" fill="#1f2937">
+    <text x="400" y="205">Feature</text>
+    <text x="400" y="226">priorities</text>
+
+    <text x="296" y="366">Costs</text>
+
+    <text x="505" y="356">Demand</text>
+    <text x="505" y="377">signals</text>
+  </g>
+
+  <!-- triple intersection -->
+  <text x="400" y="327" font-family="Helvetica, Arial, sans-serif" font-size="24" font-weight="700" text-anchor="middle" fill="#111827">Product</text>
+
+  <!-- caption -->
+  <g font-family="Helvetica, Arial, sans-serif" font-size="15" text-anchor="middle" fill="#57606a">
+    <text x="400" y="588">Three accountabilities — one founder, or three organizations.</text>
+    <text x="400" y="610">The product is what survives all three at once.</text>
+  </g>
+</svg>

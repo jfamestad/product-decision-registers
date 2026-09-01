@@ -1,10 +1,53 @@
 # triad-dr
 
-A local MCP server (stdio) that gives Claude Code and other MCP clients a durable, per-project register of decision records across three types: **ADR** (Architecture, the Builder), **IDR** (Investment, the Investor), **MDR** (Marketing, the Seller). Backed by a single DynamoDB table, deployed by CDK. One developer, many projects; the active project comes from the `DR_PROJECT` env var so tool calls stay short.
+**Alignment across your product org — and with the AI you build with.**
+
+Whatever its size, every product org contains these three personas. In a one-person operation they are all the founder, switching hats. In a large company each is a whole organization with its own leadership. The accountabilities do not scale away; only the number of people holding them changes. And however many people that is, alignment across the three is the thing that has to hold: no persona decides in isolation — each one's choices land on the other two — and every decision has to be applied consistently afterward, by the humans and by the AI doing the work.
+
+A decision gets made once, by the persona accountable for it, and then has to stay applied: to the next work item, the next agent session, the next review six weeks out. That is hard enough across a team. It is harder when half the work is done by an agent that starts every session with no memory of why the last one chose what it did. `triad-dr` is the durable record those decisions live in, in three types — **IDR** (Investment, the Investor), **MDR** (Marketing, the Seller), **ADR** (Architecture, the Builder) — one per persona, so the decision is filed under the accountability that owns it.
+
+Two things follow from that:
+
+- **Governance — nothing gets built on an unfunded bet.** Every ADR and MDR traces to a governing IDR. Work with no bet behind it is *visible* rather than assumed: `/triad-dr:status` names it, and the session-start hook surfaces bets past their review date before you spend another day on them.
+- **Propagation — decisions reach the work.** When a record lands or changes status, it publishes as an event, and subscribers apply it to the work items it touches. The architecture you settled on and the positioning you committed to show up in what actually gets assigned and built, instead of sitting in a document nobody reopens.
+
+Mechanically: a local MCP server (stdio) for Claude Code and other MCP clients, backed by a single DynamoDB table deployed by CDK. One developer, many projects; the active project comes from the `DR_PROJECT` env var so tool calls stay short.
+
+## The three personas
+
+<p align="center">
+  <img src="./docs/personas-venn.svg" alt="Venn diagram of the Builder, Seller, and Investor personas. Builder and Seller overlap on feature priorities; Seller and Investor on demand signals; Investor and Builder on costs; all three on the product." width="700">
+</p>
+
+**Builder** — accountable for the thing existing. Owns architecture, technology, data model, and operations: how the experience the Seller specified actually gets built, and what it will cost to run. Writes ADRs.
+
+**Seller** — accountable for someone wanting it. Owns audience, positioning, channel motion, and the user experience, and brings back the evidence of what people can and want to do. Writes MDRs.
+
+**Investor** — accountable for it being worth doing. Owns the bet: how much, until when, what counts as success, what counts as kill. Writes IDRs, and judges them at the review date.
+
+Where two personas meet, a decision needs both of them in the room:
+
+- **Builder ∩ Seller — feature priorities.** What gets built next is a negotiation between what the market is asking for and what the architecture can carry.
+- **Seller ∩ Investor — demand signals.** Evidence from the market is only meaningful against a bet that said what evidence would count.
+- **Investor ∩ Builder — costs.** Build effort and run cost are what the appetite is actually spent on.
+
+The **product** is the center: the thing that is buildable, wanted, and worth funding at the same time. Anything that satisfies only two of the three is not a product yet.
+
+## The three milestones
+
+The registers are not the point — the launch is. The goal is a thriving business around a product the founding three can keep iterating on and keep delighting customers with. Between here and there sit three milestones, and all three personas share every one of them:
+
+**1. Commit a bet.** Apply investor scrutiny to the Seller's demand signals and opportunity framing, informed by the Builder's read on what it actually takes to deliver. The output is an IDR: an appetite, success criteria, kill criteria, a review date. No bet, no work.
+
+**2. Build a launchable product.** Something that works, that the market actually wants, and that brings the right experience — trustworthy, with clear value. That is the center of the Venn, and it needs all three: buildable, wanted, worth the spend.
+
+**3. Onboard first customers.** Create demand and then satisfy it with the product. The founding three has to create interest, help people get started, and make sure they reach the goal they came for.
+
+None of the three milestones can be reached by one persona alone. The registers are what keep the other two's reasoning in the room when they aren't — so a decision made under the Investor's appetite in month one is still being applied in month six, and the reason it was made is still legible.
 
 ## Why this matters
 
-The three personas are not job titles — one operator holds all three — they are three distinct kinds of accountability, and the register exists to keep them from blurring. **No bet, no work.** Every ADR and MDR traces to a governing IDR. The Investor decides whether, how much, and until when. The Seller owns audience and positioning and the user experience. The Builder delivers the UX the Seller defines, and documents how. At the governing IDR's review date, the Investor tests the success criteria against the Seller's evidence and records the result. A missed criterion routes to either Seller accountability (the market rejected it) or Builder accountability (the built thing didn't match the spec), because two very different failures look identical at review time and confusing them is the most expensive mistake the register exists to prevent.
+The three personas are not job titles — at founder scale one operator holds all three — they are three distinct kinds of accountability, and the register exists to keep them from blurring. **No bet, no work.** Every ADR and MDR traces to a governing IDR. The Investor decides whether, how much, and until when. The Seller owns audience and positioning and the user experience. The Builder delivers the UX the Seller defines, and documents how. At the governing IDR's review date, the Investor tests the success criteria against the Seller's evidence and records the result. A missed criterion routes to either Seller accountability (the market rejected it) or Builder accountability (the built thing didn't match the spec), because two very different failures look identical at review time and confusing them is the most expensive mistake the register exists to prevent.
 
 See [decision-registers-mcp-spec.md](./decision-registers-mcp-spec.md) §1 for the full model. It is not decoration.
 
