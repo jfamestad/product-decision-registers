@@ -115,10 +115,13 @@ That walks the Investor ritual and calls `dr_create` for you. To see the raw fie
 | Target | What it does |
 |---|---|
 | `install` | Install dependencies (`uv sync`) |
-| `deploy` | Deploy CDK stack (creates table, prints policy ARN) |
+| `deploy` | Deploy the registers stack (creates table, prints policy ARN) |
 | `diff` | Show pending CDK changes |
 | `test` | Run test suite |
-| `run` | Run the MCP server locally (for debugging) |
+| `run` | Run the stdio MCP server locally (for debugging) |
+| `gateway-layer` | Build the Lambda dependency layer (Linux/ARM64, no Docker) |
+| `gateway-schema` | Write the generated AgentCore tool schema to `build/` for inspection |
+| `deploy-gateway` | Build the layer, then deploy registers + the AgentCore gateway |
 
 ## The three registers
 
@@ -205,6 +208,181 @@ After deploying, point that consumer's process at its own queue: set
 subscriber's output names (`DrEventsQueueUrl` / `DrEventsQueueArn`) are
 unchanged.
 
+## Deployable MCP endpoint (AgentCore Gateway)
+
+The stdio server above needs a checkout, a Python environment, and AWS
+credentials on the machine running it. The gateway is the other way in: a
+hosted MCP endpoint, authorized by Cognito, reaching the same tools over the
+same table.
+
+```
+MCP client --(bearer token)--> AgentCore Gateway --(IAM role)--> Lambda
+     |                                |                            |
+Cognito token endpoint       CUSTOM_JWT authorizer      triad_dr.gateway.handler
+                                                                    |
+                                                          MCPServer.call_tool
+                                                                    |
+                                                           Store -> DynamoDB
+```
+
+**It is additive.** `make deploy`, `.mcp.json`, and `triad-dr-mcp` behave
+exactly as before, whether or not this is deployed. `src/triad_dr/server.py`
+is not modified by any of it — the Lambda imports `build_server` and
+dispatches through `MCPServer.call_tool`, the same entry point stdio uses, so
+argument validation, error messages and governance warnings are inherited
+rather than reimplemented (the one deliberate exception is the `isError`
+flag; see "Two things that differ" below). The tool schema the gateway advertises is
+**generated from that same registry at synth time**, so adding a tool to
+`server.py` is the whole update path; there is no second definition to keep
+in step.
+
+### Deploy
+
+```bash
+make deploy-gateway
+```
+
+That builds the Lambda dependency layer and deploys `RegistersStack` +
+`GatewayStack`. The layer step exists because the Lambda imports `mcp`,
+`pydantic`, `structlog` and `python-ulid`, none of which ship with the Lambda
+runtime — `uv` cross-resolves them for Linux/ARM64, so no Docker is needed
+(see the events-Lambda gotcha below for the same constraint).
+
+The Cognito hosted-domain prefix is global across all AWS accounts. The
+default is `triad-dr-registers`; if it is taken, pass your own:
+
+```bash
+cd infra && cdk deploy RegistersStack GatewayStack -c cognitoDomainPrefix=triad-dr-<you>
+```
+
+**`make deploy` still deploys only the registers stack**, and the gateway
+stack is not even added to the CDK app until the layer has been built — so
+the original path never grows a dependency on any of this. Deploying one does
+not require the other.
+
+Every `<Placeholder>` below is a `GatewayStack` output printed at the end of
+the deploy; re-read them any time with:
+
+```bash
+aws cloudformation describe-stacks --stack-name GatewayStack \
+  --query 'Stacks[0].Outputs[].[OutputKey,OutputValue]' --output table
+```
+
+### Get a token, call a tool
+
+Cognito authorizes with the **client-credentials** grant: an MCP client is a
+headless process with no browser, so it exchanges a client ID and secret for
+a bearer token. Unauthenticated requests are rejected at the gateway — the
+Lambda is never invoked and the table is never touched.
+
+Read the client secret (deliberately not a stack output, since outputs are
+readable by anyone who can describe the stack — the exact command is in the
+`CognitoClientSecretCommand` output):
+
+```bash
+aws cognito-idp describe-user-pool-client \
+  --user-pool-id <CognitoUserPoolId> --client-id <CognitoClientId> \
+  --query UserPoolClient.ClientSecret --output text
+```
+
+Then exchange it for a token. Put this in your shell profile — the token is
+valid for **one hour**, so it needs re-minting rather than pasting once:
+
+```bash
+dr-token() {
+  local pool=<CognitoUserPoolId> cid=<CognitoClientId>
+  local secret; secret=$(aws cognito-idp describe-user-pool-client \
+    --user-pool-id "$pool" --client-id "$cid" \
+    --query UserPoolClient.ClientSecret --output text)
+  curl -s -X POST "<CognitoTokenEndpoint>" \
+    -H 'Content-Type: application/x-www-form-urlencoded' \
+    -u "$cid:$secret" \
+    -d 'grant_type=client_credentials&scope=triad-dr/invoke' \
+    | python3 -c 'import sys,json; print(json.load(sys.stdin)["access_token"])'
+}
+export TRIAD_DR_TOKEN=$(dr-token)
+```
+
+Requesting any other scope fails at the token endpoint with `invalid_scope`,
+before a request ever reaches the gateway.
+
+### Configure a client to use it
+
+`.mcp.json` expands `${VAR}` from the environment, so the token stays out of
+the file:
+
+```json
+{
+  "mcpServers": {
+    "triad-dr-remote": {
+      "type": "http",
+      "url": "<GatewayUrl>",
+      "headers": { "Authorization": "Bearer ${TRIAD_DR_TOKEN}" }
+    }
+  }
+}
+```
+
+Or equivalently:
+
+```bash
+claude mcp add --transport http triad-dr-remote <GatewayUrl> \
+  --header "Authorization: Bearer ${TRIAD_DR_TOKEN}"
+```
+
+**Both can be configured at once.** The remote server is a different entry
+from the stdio `triad-dr` block, so a repo can have the local server for its
+own project and the gateway for everything else. They share one table; a
+record written through either is immediately visible to the other.
+
+When `TRIAD_DR_TOKEN` expires, refresh it (`export TRIAD_DR_TOKEN=$(dr-token)`)
+and restart the session — the header is read at connection time. An expired
+token surfaces as HTTP 401 from the gateway, not as a tool error.
+
+### Verify it
+
+```bash
+curl -s -X POST "<GatewayUrl>" \
+  -H "Authorization: Bearer $TRIAD_DR_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+Twenty tools, each prefixed `registers___`. The same request with no
+`Authorization` header returns **HTTP 401** — that is the check worth running,
+because it is the one that proves the Lambda is unreachable without a token.
+
+### Three things that differ from stdio
+
+**Tools are prefixed.** AgentCore names a target's tools
+`${target}___${tool}`, so `dr_create` arrives as `registers___dr_create`. The
+handler strips the prefix before dispatching; the `GatewayToolPrefix` output
+tells you what it is.
+
+**`project=` is required on every call.** stdio runs one server per repo and
+reads `DR_PROJECT` from that repo's `.mcp.json`. A gateway is one deployment
+serving every repo, so there is no repo to read it from and `DR_PROJECT` is
+deliberately unset on the Lambda: a call without `project=` fails with
+`NoProjectError` rather than writing into whichever namespace happened to be
+configured. Set `DR_PROJECT` on the function yourself only if the gateway
+serves exactly one project.
+
+**A failed tool call arrives with `isError: false`.** A Lambda target returns
+a value; it does not get to set the flag on the envelope the gateway builds,
+so a failure comes back as a successful result whose payload is
+`{"error": "<message>"}`. Raising instead would make the gateway return
+`isError: true` with a *generic* message and discard the remediation text —
+and that text ("SSO session expired — run: `aws sso login …`") is the thing
+this codebase works hardest to produce. **Read the payload, not the flag.**
+Setting the gateway's `exceptionLevel` to `DEBUG` recovers both, at the cost
+of exposing granular internals to every caller.
+
+`dr_events_pending` and `dr_events_ack` also need `DR_EVENTS_QUEUE_URL`,
+which the gateway stack does not set — those two degrade to a configuration
+error while the other eighteen tools work, the same degradation the stdio
+server documents.
+
 ## Project layout
 
 ```
@@ -216,11 +394,14 @@ src/triad_dr/
   cli.py                       - `triad-dr` command; `due` backs the plugin hook
   server.py                    - MCP tool layer (in progress)
   events.py                    - Stream -> SNS event notification Lambda handler (IDR-0003)
+  gateway.py                   - AgentCore Gateway adapter: tool-schema generation
+                                 (synth time) + the Lambda target (runtime)
 
 infra/
   app.py                       - CDK app entry point
   cdk.json                     - Runs the app through the uv project venv
   stacks/registers_stack.py    - Table (+ stream) + IAM policy + events Lambda/topic/DLQ
+  stacks/gateway_stack.py      - Cognito + AgentCore Gateway + the Lambda target
 
 plugin/                        - Claude Code plugin (commands, skill, hook)
 
@@ -229,6 +410,7 @@ tests/
   test_store.py                - Store contract
   test_cli.py                  - CLI behavior and failure modes
   test_events.py               - Stream -> SNS event handler, wire-format fixtures
+  test_gateway.py              - Tool-schema translation + the gateway Lambda handler
 ```
 
 ## Known gotchas
@@ -255,6 +437,7 @@ AWS_PROFILE=dev uv run python -c "from triad_dr.store import Store; print(Store(
 - CLI (`triad-dr due`) — built and tested.
 - CDK infra (table, IAM policy) — built and tested.
 - Plugin (commands, session-start hook) — built and tested.
+- AgentCore Gateway endpoint (Cognito auth, Lambda target, generated tool schema) — deployed and verified end to end: all 20 tools listed and called over the remote endpoint, a record created and read back through both the gateway and the local store, and its `record.created` / `record.status_changed` events observed on the subscriber queue. Unauthenticated requests get 401; a wrong scope fails at the token endpoint.
 - **MCP server (tools)** — in progress. Tool layer (`server.py`) under development; contract stable.
 
-28 tests green across the store and CLI. The spec (§7) defines acceptance criteria for the full server.
+198 tests green. The spec (§7) defines acceptance criteria for the full server.
