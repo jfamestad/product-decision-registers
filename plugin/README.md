@@ -14,7 +14,7 @@ The registers are storage. This plugin is the read path: the rituals that keep a
 | `/triad-dr:answer` | Work the escalation queue — decisions automated workers are stopped on. |
 | `/triad-dr:apply` | Drain published decision events and apply them to work items. |
 | `/triad-dr:status` | What's blocked, what's overdue, what's ungoverned, what's delegated, what the shape says. |
-| `decision-registers` skill | The persona model, the rules, and when to escalate rather than decide. |
+| `decision-registers` skill | The persona model, the rules, when to escalate rather than decide, and how to frame a decision so you can make it in one read. |
 | SessionStart hook | Prints blocked workers and bets past their review date. Silent otherwise. |
 
 ## Two things it deliberately does not do

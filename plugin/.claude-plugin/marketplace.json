@@ -10,7 +10,7 @@
     {
       "name": "triad-dr",
       "source": "./",
-      "version": "0.8.0",
+      "version": "0.9.0",
       "description": "Decision registers plus an escalation queue: write a killable bet, judge it at its review date, record decisions under the bet that funds them, and answer what automated workers are blocked on.",
       "category": "productivity"
     }

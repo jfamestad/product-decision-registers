@@ -1,6 +1,6 @@
 [project]
 name = "triad-dr-mcp"
-version = "0.8.0"
+version = "0.9.0"
 description = "Decision Registers MCP server (ADR / IDR / MDR) backed by DynamoDB"
 requires-python = ">=3.12"
 dependencies = [
