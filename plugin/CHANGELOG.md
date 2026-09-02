@@ -4,6 +4,35 @@ Version is bumped on every release so an agent working from cached guidance can 
 
 Format: newest first. Entries say what changed and, where it matters, what it cost to find out.
 
+## 0.9.0
+
+### One framing for every decision put to the operator
+
+The escalation bar — *an un-initiated leader could read it once and decide* —
+already governed filed escalations. It now governs asking live in session too,
+because the two were being written differently despite costing the operator the
+same attention. A question asked mid-session had no stated format at all, so it
+arrived as whatever the session happened to contain.
+
+The brief gained the parts that were missing and the constraints that make it
+readable:
+
+- **The decision in one sentence**, phrased so "A" or "B" is a complete answer,
+  and **the governing bet** — both previously assumed rather than asked for.
+- **A fifteen-line ceiling.** A brief that doesn't fit isn't framed yet. The
+  operator reconstructing context is the failure this bar exists to prevent, and
+  length is how it happens even when every field is present.
+- **An explicit exclusion list** — the investigation narrative, a third option
+  nobody means, hedging around the recommendation, caveats that apply to every
+  option equally, and anything already in the register. Noise costs the same
+  attention as the decision does, which is the whole reason the bar is strict.
+- **One at a time.** Several raised together is a decision about which decision
+  to make first.
+
+Nothing about *when* to escalate changed: default-deny, and when in doubt,
+escalate. Framing a question well is what makes over-escalating the cheap
+failure it is supposed to be.
+
 ## 0.8.0
 
 ### `dr_withdraw` — the third exit, which was declared but unreachable

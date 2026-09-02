@@ -26,3 +26,7 @@ cdk.out/
 # macOS / editors
 .DS_Store
 .idea/
+
+# Lambda layer + generated schema artifacts (see `make gateway-layer`).
+# Cross-resolved binaries for a different platform; never useful in a diff.
+build/

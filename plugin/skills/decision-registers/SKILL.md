@@ -5,7 +5,7 @@ description: Use when working in a repo wired to the triad-dr decision registers
 
 # Decision Registers
 
-**triad-dr v0.8.0.** If you are working from cached guidance or a briefing that cites an older version, re-read this skill before acting — the rules below have changed between versions, and `CHANGELOG.md` in the plugin root says how. Version is bumped on every release for exactly this reason.
+**triad-dr v0.9.0.** If you are working from cached guidance or a briefing that cites an older version, re-read this skill before acting — the rules below have changed between versions, and `CHANGELOG.md` in the plugin root says how. Version is bumped on every release for exactly this reason.
 
 Three registers, one hierarchy. Every record belongs to exactly one persona, and one operator holds all three. The registers exist to keep those three kinds of accountability from blurring into each other.
 
@@ -30,6 +30,8 @@ Maintenance is not an exemption. Each project carries a **standing operations ID
 **Authority is default-deny, and only an IDR grants it.** Absent an explicit grant in an accepted IDR's `delegation` field, every record is human-owned. Grants are scoped to the bet and expire with it — supersede or deprecate the IDR and the delegation dies. The complete current authority set for a project is `dr_list(rec_type="IDR", status="accepted")`. Read it before assuming you may accept anything.
 
 **When you hit the edge of that authority, escalate — do not decide.** See "Escalation" below. This is the single most important behavior in this document.
+
+**However you put a decision to the operator — filed as an escalation or asked live in session — frame it the same way.** The brief under "Escalation" is the format for both, and its ceiling is fifteen lines.
 
 **Warn, never block.** The tools do not refuse writes on governance grounds. An unfunded ADR, an MDR with no evidence plan — these warn and succeed. Surface the warning to the operator in plain language rather than swallowing it; the warning is the product.
 
@@ -64,19 +66,32 @@ Everywhere else in this document, you draft only what the operator asked for. Th
 
 **When in doubt, escalate.** The two failure modes are not symmetric. Escalating too much produces a slower inbox, which is visible and self-correcting — the operator widens a grant. Escalating too little produces an important decision made by something with no accountability, found much later, already built on. Take the cheap failure.
 
-**The bar for a good escalation: an un-initiated leader could read it once and decide.**
+**The bar for a good escalation: an un-initiated leader could read it once and decide.** The same bar applies when you put a decision to the operator live in session instead of filing it. The channel differs; the framing does not.
 
 This is stricter than it sounds. You have a whole session of context the operator does not. The characteristic failure is a question that only makes sense to the asker — "should I use approach B?" is unanswerable to anyone who wasn't watching. Write it for someone walking in cold: no session history, no repo knowledge, deciding from a phone without opening anything.
 
-That means:
+**What goes in:**
 
-- **The background**, not just the question. What is being built, what forced the choice.
-- **Options with consequences**, and whether each is reversible.
-- **Your recommendation**, and why. You did the work; say what you'd do.
+- **The decision**, in one sentence, phrased so that "A" or "B" is a complete answer.
+- **The background**, not just the question. What is being built, and what forced the choice *now*.
+- **Options with consequences** — two or three, each with what it costs and whether it is reversible.
+- **Your recommendation**, and the reason. You did the work; say what you'd do.
 - **The cost of delay.** "Nothing breaks until Friday" is a fine and useful answer.
-- **`blocking`** — is work actually stopped right now, or is this a flag for later? These are different emergencies and the queue sorts on it.
+- **The governing bet**, when there is one.
+- **`blocking`** — is work actually stopped right now, or is this a flag for later? These are different emergencies and the queue sorts on it. Escalations only; asking live is its own kind of stopped.
 
-Call `dr_escalate(...)`. Answering is the operator's job via `/triad-dr:answer`.
+**What stays out**, because noise costs the operator the same attention the decision does:
+
+- The investigation narrative — what you tried, what failed, what you read. If a finding changes the choice it belongs in the options; if it doesn't, it doesn't appear anywhere.
+- A third option you don't mean. Two real ones beat three where one is filler.
+- Hedging around the recommendation, and caveats that apply to every option equally — a caveat that doesn't discriminate between options can't inform the choice.
+- Anything already in the register. Cite the ref; don't restate it.
+
+**Fifteen lines is the ceiling.** If it doesn't fit, the decision isn't framed yet — frame it before you raise it. A brief the operator has to reconstruct is one they will put down.
+
+**One at a time.** If several are queued, list them by one-line title, say which one is actually blocking work, and raise them individually. Five at once is a decision about which decision to make first, which is not the one you meant to ask.
+
+Call `dr_escalate(...)` to file. Answering is the operator's job via `/triad-dr:answer`.
 
 **Then keep it current.** The escalation is yours until it is closed: check the queue before filing a duplicate, withdraw it yourself with `dr_withdraw(ref, reason)` if the question becomes moot, and when you come back to the work, confirm the answer landed and produced a record. An escalation nobody closed is a decision the operator will be asked to make twice.
 

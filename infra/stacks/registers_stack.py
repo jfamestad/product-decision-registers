@@ -34,6 +34,15 @@ _SRC_DIR = Path(__file__).resolve().parents[2] / "src"
 # deaf.
 _FILTERABLE_ATTRIBUTES = frozenset({"project", "rec_type", "persona", "status", "event_type"})
 
+# The table's physical name. Fixed rather than CDK-generated because the MCP
+# server resolves it from `DR_TABLE` (defaulting to this same string in
+# `triad_dr.server.DEFAULT_TABLE_NAME`) with no CloudFormation lookup.
+# `GatewayStack` imports the table by this name instead of taking it as a
+# cross-stack prop, which keeps this stack's template untouched by the
+# gateway's existence -- and avoids an export that `cdk deploy RegistersStack`
+# alone would then try to remove while the gateway still imported it.
+TABLE_NAME = "triad-decision-registers"
+
 
 @dataclass(frozen=True)
 class SubscriberSpec:
@@ -249,7 +258,7 @@ class RegistersStack(cdk.Stack):
         return dynamodb.Table(
             self,
             "RegistersTable",
-            table_name="triad-decision-registers",
+            table_name=TABLE_NAME,
             partition_key=dynamodb.Attribute(
                 name="pk",
                 type=dynamodb.AttributeType.STRING,
